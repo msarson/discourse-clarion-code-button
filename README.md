@@ -21,7 +21,7 @@ The cursor is automatically positioned inside the code block, ready for you to p
 3. Click **Install** and select **From a git repository**
 4. Enter the repository URL:
    ```
-   https://github.com/clarionhub/discourse-clarion-code-button
+   https://github.com/msarson/discourse-clarion-code-button
    ```
 5. Click **Install**
 6. Add the component to your active theme(s)

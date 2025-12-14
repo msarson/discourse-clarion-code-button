@@ -14,11 +14,17 @@ function getClarionKeywords() {
 }
 
 function looksLikeBraceLanguage(text) {
-  return (
-    /^\s*[{]\s*$/m.test(text) ||
-    /\b(if|for|while|else|switch|class|function)\b[^{\n]*\{/i.test(text) ||
-    /\{[\s\S]*?\n[\s\S]*?\}/.test(text)
-  );
+  // If we see a brace pair spanning lines, it's not Clarion
+  if (/\{[\s\S]*?\n[\s\S]*?\}/.test(text)) {
+    return true;
+  }
+
+  // If a line ends with {, that's block syntax
+  if (/^\s*.*\{\s*$/m.test(text)) {
+    return true;
+  }
+
+  return false;
 }
 
 function detectClarionCode(text) {

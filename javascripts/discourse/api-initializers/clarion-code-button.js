@@ -111,31 +111,13 @@ export default {
           if (detectClarionCode(trimmedText)) {
             event.preventDefault();
 
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const before = textarea.value.substring(0, start);
-            const after = textarea.value.substring(end);
-
             let insertText = pastedText;
 
             if (confirm(I18n.t("js.composer.clarion_code_detected"))) {
               insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
             }
 
-            textarea.value = before + insertText + after;
-
-            const newCursorPos = before.length + insertText.length;
-            textarea.setSelectionRange(newCursorPos, newCursorPos);
-
-            // 🔴 This is essential — tells Discourse the content changed
-            const inputEvent = new InputEvent("input", {
-              bubbles: true,
-              cancelable: true,
-              inputType: "insertFromPaste",
-              data: insertText
-            });
-
-            textarea.dispatchEvent(inputEvent);
+            document.execCommand("insertText", false, insertText);
           }
 
         };

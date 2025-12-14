@@ -80,18 +80,17 @@ if (composerElement.dataset.clarionPasteHandlerAttached) {
 composerElement.dataset.clarionPasteHandlerAttached = "true";
 ```
 
-### 6. Manual Content Manipulation & Event Dispatch
-When manipulating textarea content directly (without using Plugin API methods), you **must** dispatch an `input` event to notify Discourse:
+### 6. Programmatic Text Insertion with Undo Support
+When inserting text programmatically (e.g., in paste handlers), use `document.execCommand("insertText")` to preserve browser undo/redo functionality:
 
 ```javascript
-textarea.value = before + insertText + after;
-textarea.setSelectionRange(newCursorPos, newCursorPos);
-
-// Critical: Notify Discourse of content change
-textarea.dispatchEvent(new Event("input", { bubbles: true }));
+// Preferred: Creates undo boundary
+document.execCommand("insertText", false, textToInsert);
 ```
 
-Without this dispatch, Discourse's internal state won't update and the changes may be lost.
+**Rationale**: While `execCommand` is deprecated, it remains the only browser-supported way to create undo stack entries for programmatic text insertion. Manual textarea manipulation (setting `.value` and dispatching `InputEvent`) does not create undo boundaries, breaking Ctrl+Z/Cmd+Z behavior.
+
+**Note**: This usage is limited to paste handling where undo functionality is critical. Discourse core and the Ember ecosystem have not yet provided a modern replacement.
 
 ### 7. Code Block Detection
 Detect if the cursor is inside a fenced code block to avoid nested formatting:
@@ -108,7 +107,7 @@ if (fenceCount % 2 === 1) return;
 ## Common Pitfalls
 
 1. **Not capturing stable API reference**: Leads to "getCurrentComposer is not a function" errors
-2. **Forgetting to dispatch input events**: Manual textarea changes won't be recognized by Discourse
+2. **Using manual textarea manipulation**: Breaks browser undo/redo; use `document.execCommand("insertText")` instead
 3. **Not preventing duplicate handlers**: Can cause multiple confirmations or unwanted behavior
 4. **Minifier aliasing**: Variable names can be rewritten by minifiers; use stable references
 
@@ -124,6 +123,8 @@ if (fenceCount % 2 === 1) return;
 
 ## Version History
 
+- **1.0.9**: Replaced manual textarea manipulation with `document.execCommand("insertText")` to preserve undo/redo functionality
+- **1.0.8**: Improved paste detection robustness
 - **1.0.7**: Fixed API reference shadowing issue with stable `pluginApi` capture
 - **1.0.6**: Added manual textarea manipulation with proper event dispatch
 - **1.0.5**: Initial smart paste detection with keyword-based scoring

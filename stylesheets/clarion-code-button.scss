@@ -1,0 +1,58 @@
+.clarion-paste-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.clarion-paste-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--secondary);
+  border: 1px solid var(--primary-low);
+  border-radius: 4px;
+  padding: 20px;
+  min-width: 400px;
+  max-width: 500px;
+  z-index: 1001;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--primary);
+  }
+
+  p {
+    margin-bottom: 20px;
+    color: var(--primary);
+  }
+}
+
+.clarion-paste-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+
+  button {
+    flex: 1;
+  }
+}
+
+.clarion-paste-remember {
+  text-align: center;
+  color: var(--primary-medium);
+  font-size: 0.9em;
+
+  label {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+}

@@ -37,8 +37,6 @@ export default {
   name: "clarion-code-toolbar-button",
 
   initialize() {
-    console.log("[Clarion] Initializer running");
-
     withPluginApi("0.8", (api) => {
       const pluginApi = api;
       const locale = I18n.currentLocale();
@@ -79,25 +77,18 @@ export default {
 
       // Add paste handler
       api.onAppEvent("composer:opened", () => {
-        console.log("[Clarion] composer:opened event fired");
-
         const composerElement = document.querySelector(".d-editor-input");
         if (!composerElement) {
-          console.log("[Clarion] Composer element not found");
           return;
         }
 
         // Prevent duplicate handlers
         if (composerElement.dataset.clarionPasteHandlerAttached) {
-          console.log("[Clarion] Paste handler already attached");
           return;
         }
         composerElement.dataset.clarionPasteHandlerAttached = "true";
-        console.log("[Clarion] Paste handler attached successfully");
 
         const handlePaste = (event) => {
-          console.log("[Clarion] Paste event detected");
-
           const pastedText = event.clipboardData.getData("text/plain");
           const trimmedText = pastedText ? pastedText.trim() : "";
 
@@ -118,8 +109,6 @@ export default {
           if (fenceCount % 2 === 1) return;
 
           if (detectClarionCode(trimmedText)) {
-            console.log("[Clarion] Clarion code detected!");
-
             event.preventDefault();
 
             const start = textarea.selectionStart;

@@ -120,18 +120,28 @@ export default {
           if (detectClarionCode(trimmedText)) {
             console.log("[Clarion] Clarion code detected!");
 
-            const composer = pluginApi.getCurrentComposer();
-            if (!composer) return;
-
             event.preventDefault();
 
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const before = textarea.value.substring(0, start);
+            const after = textarea.value.substring(end);
+
+            let insertText = pastedText;
+
             if (confirm(I18n.t("js.composer.clarion_code_detected"))) {
-              const wrappedText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-              composer.replaceSelection(wrappedText);
-            } else {
-              composer.replaceSelection(pastedText);
+              insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
             }
+
+            textarea.value = before + insertText + after;
+
+            const newCursorPos = before.length + insertText.length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+            // 🔴 This is essential — tells Discourse the content changed
+            textarea.dispatchEvent(new Event("input", { bubbles: true }));
           }
+
         };
 
         composerElement.addEventListener("paste", handlePaste);

@@ -13,7 +13,20 @@ function getClarionKeywords() {
   return [hardKeywords, softKeywords, types, functions];
 }
 
+function looksLikeBraceLanguage(text) {
+  return (
+    /^\s*[{]\s*$/m.test(text) ||
+    /\b(if|for|while|else|switch|class|function)\b[^{\n]*\{/i.test(text) ||
+    /\{[\s\S]*?\n[\s\S]*?\}/.test(text)
+  );
+}
+
 function detectClarionCode(text) {
+  // Early veto: if it looks like a brace language, it's not Clarion
+  if (looksLikeBraceLanguage(text)) {
+    return false;
+  }
+
   const [hardKeywords, softKeywords, types, functions] = getClarionKeywords();
 
   // Count occurrences of keywords in each group

@@ -75,6 +75,21 @@ export default {
             );
           }
         });
+
+        // Conditionally add reset button if preference exists
+        if (localStorage.getItem(STORAGE_KEY) !== null) {
+          toolbar.addButton({
+            id: "clarion-reset-preference",
+            group: "insertions",
+            icon: "undo",
+            title: "Reset Clarion paste preference",
+
+            perform() {
+              localStorage.removeItem(STORAGE_KEY);
+              alert("Clarion paste preference has been reset.");
+            }
+          });
+        }
       });
 
       // Add paste handler
@@ -113,19 +128,12 @@ export default {
           if (detectClarionCode(trimmedText)) {
             event.preventDefault();
 
-            const forcePrompt = event.shiftKey;
-
-            // If Shift is held, clear any stored preference
-            if (forcePrompt) {
-              localStorage.removeItem(STORAGE_KEY);
-            }
-
             const pref = localStorage.getItem(STORAGE_KEY);
             let insertText = pastedText;
 
-            if (pref === "always" && !forcePrompt) {
+            if (pref === "always") {
               insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-            } else if (pref === "never" && !forcePrompt) {
+            } else if (pref === "never") {
               insertText = pastedText;
             } else {
               const shouldWrap = confirm(I18n.t("js.composer.clarion_code_detected"));

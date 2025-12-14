@@ -99,19 +99,6 @@ export default {
           title: "js.composer.clarion_code",
 
           perform(e) {
-            // Check if Shift key is held - if so, reset the preference
-            if (window.event && window.event.shiftKey) {
-              localStorage.removeItem(STORAGE_KEY);
-              // Show a brief confirmation
-              const btn = document.querySelector('[data-id="clarion-code"]');
-              if (btn) {
-                const originalTitle = btn.getAttribute('title');
-                btn.setAttribute('title', 'Paste preference reset!');
-                setTimeout(() => btn.setAttribute('title', originalTitle), 2000);
-              }
-              return;
-            }
-
             e.applySurround(
               "```clarion\n",
               "\n```",
@@ -161,14 +148,19 @@ export default {
           if (detectClarionCode(trimmedText)) {
             event.preventDefault();
 
+            const forcePrompt = event.shiftKey;
+
+            // If Shift is held, clear any stored preference
+            if (forcePrompt) {
+              localStorage.removeItem(STORAGE_KEY);
+            }
+
             const pref = localStorage.getItem(STORAGE_KEY);
-            const shiftPressed = event.shiftKey;
             let insertText = pastedText;
 
-            // If Shift is held, always show dialog regardless of preference
-            if (pref === "always" && !shiftPressed) {
+            if (pref === "always" && !forcePrompt) {
               insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-            } else if (pref === "never" && !shiftPressed) {
+            } else if (pref === "never" && !forcePrompt) {
               insertText = pastedText;
             } else {
               const { shouldWrap, remember } = await showClarionPasteDialog();

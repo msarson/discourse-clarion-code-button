@@ -63,12 +63,17 @@ function looksLikePython(text) {
 
   return false;
 }
+function stripStrings(text) {
+  // Remove single-quoted and double-quoted strings
+  return text.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, "''");
+}
 
 function detectClarionCode(text) {
+  const textWithoutStrings = stripStrings(text);
   // Early veto: if it looks like a brace language, it's not Clarion
-  if (looksLikeBraceLanguage(text) || looksLikeSql(text) || looksLikePython(text)) {
-    return false;
-  }
+  if (looksLikeBraceLanguage(textWithoutStrings)) return false;
+  if (looksLikeSql(textWithoutStrings)) return false;
+  if (looksLikePython(textWithoutStrings)) return false;
 
   const [hardKeywords, softKeywords, types, functions] = getClarionKeywords();
 

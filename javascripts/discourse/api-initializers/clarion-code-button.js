@@ -50,9 +50,23 @@ function looksLikeSql(text) {
   return sqlShapeHits >= 2;
 }
 
+function looksLikePython(text) {
+  // Colon-terminated block headers (Python-only)
+  if (/^\s*(if|elif|else|for|while|def|class|with|try|except|finally)\b[^\n]*:\s*$/im.test(text)) {
+    return true;
+  }
+
+  // def / class at line start with colon
+  if (/^\s*(def|class)\s+\w+\s*\(?.*\)?:\s*$/im.test(text)) {
+    return true;
+  }
+
+  return false;
+}
+
 function detectClarionCode(text) {
   // Early veto: if it looks like a brace language, it's not Clarion
-  if (looksLikeBraceLanguage(text) || looksLikeSql(text)) {
+  if (looksLikeBraceLanguage(text) || looksLikeSql(text) || looksLikePython(text)) {
     return false;
   }
 

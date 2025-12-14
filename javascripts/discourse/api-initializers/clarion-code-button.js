@@ -65,7 +65,6 @@ export default {
       api.addComposerToolbarPopupMenuOption({
         id: "clarion-reset-preference",
         label: "js.composer.clarion_reset_preference",
-        icon: "undo",
         action() {
           localStorage.removeItem(STORAGE_KEY);
           console.info("Clarion paste preference reset");

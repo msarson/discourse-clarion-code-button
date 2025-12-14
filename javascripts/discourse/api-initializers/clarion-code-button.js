@@ -84,7 +84,7 @@ export default {
           toolbar.addButton({
             id: "clarion-reset-preference",
             group: "insertions",
-            icon: "trash-alt",
+            icon: "trash",
             title: "js.composer.clarion_reset_preference",
 
             perform() {

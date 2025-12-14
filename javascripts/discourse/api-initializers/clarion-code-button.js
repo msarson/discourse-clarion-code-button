@@ -102,6 +102,23 @@ export default {
         }
         composerElement.dataset.clarionPasteHandlerAttached = "true";
 
+        let rKeyPressed = false;
+
+        const handleKeyDown = (event) => {
+          if (event.key === "r" || event.key === "R") {
+            rKeyPressed = true;
+          }
+        };
+
+        const handleKeyUp = (event) => {
+          if (event.key === "r" || event.key === "R") {
+            rKeyPressed = false;
+          }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+        document.addEventListener("keyup", handleKeyUp);
+
         const handlePaste = (event) => {
           const pastedText = event.clipboardData.getData("text/plain");
           const trimmedText = pastedText ? pastedText.trim() : "";
@@ -119,62 +136,37 @@ export default {
           const fenceMatches = textBeforeCursor.match(/^```/gm);
           const fenceCount = fenceMatches ? fenceMatches.length : 0;
 
-          let rKeyPressed = false;
+          // If odd number of fences, we're inside a code block
+          if (fenceCount % 2 === 1) return;
 
-          const handleKeyDown = (event) => {
-            if (event.key === "r" || event.key === "R") {
-              rKeyPressed = true;
-            }
-          };
+          if (detectClarionCode(trimmedText)) {
+            event.preventDefault();
 
-          const handleKeyUp = (event) => {
-            if (event.key === "r" || event.key === "R") {
-              rKeyPressed = false;
-            }
-          };
+            const pref = localStorage.getItem(STORAGE_KEY);
+            let insertText = pastedText;
 
-          document.addEventListener("keydown", handleKeyDown);
-          document.addEventListener("keyup", handleKeyUp);
+            if (pref === "always") {
+              insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
+            } else if (pref === "never") {
+              insertText = pastedText;
+            } else {
+              const shouldWrap = confirm(I18n.t("js.composer.clarion_code_detected"));
 
-          const handlePaste = (event) => {
-            const pastedText = event.clipboardData.getData("text/plain");
-            const trimmedText = pastedText ? pastedText.trim() : "";
-
-            // Ignore empty or whitespace-only pastes
-            if (!trimmedText) return;
-
-            // Check if cursor is inside a fenced code block
-            const textarea = event.target;
-            const text = textarea.value;
-            const cursorPos = textarea.selectionStart;
-            const textBeforeCursor = text.substring(0, cursorPos);
-
-            // Count backtick fence markers before cursor
-            const fenceMatches = textBeforeCursor.match(/^```/gm);
-            const fenceCount = fenceMatches ? fenceMatches.length : 0;
-
-            // If odd number of fences, we're inside a code block
-            if (fenceCount % 2 === 1) return;
-
-            if (detectClarionCode(trimmedText)) {
-              event.preventDefault();
-
-              const pref = localStorage.getItem(STORAGE_KEY);
-              let insertText = pastedText;
-
-              if (pref === "always") {
+              if (shouldWrap) {
                 insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-              } else if (pref === "never") {
-                insertText = pastedText;
+                if (rKeyPressed) {
+                  localStorage.setItem(STORAGE_KEY, "always");
+                }
               } else {
-                const shouldWrap = confirm(I18n.t("js.composer.clarion_code_detected"));
+                if (rKeyPressed) {
+                  localStorage.setItem(STORAGE_KEY, "never");
+                }
+              }
+            }
 
-                if (shouldWrap) {
-                  insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-                  if (rKeyPressed) {
-                    localStorage.setItem(STORAGE_KEY, "always");
-                  }
-                } else {
-                  if (rKeyPressed) {
-                    localStorage.setItem(STORAGE_KEY, "never");
-                  }
+            document.execCommand("insertText", false, insertText);
+          }
+        };
+
+        composerElement.addEventListener("paste", handlePaste);
+      });

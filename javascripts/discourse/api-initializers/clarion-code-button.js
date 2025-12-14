@@ -56,6 +56,9 @@ export default {
       I18n.translations[locale].js.composer.clarion_code_detected =
         "This looks like Clarion code. Wrap it in a Clarion code block?";
 
+      I18n.translations[locale].js.composer.clarion_reset_preference =
+        "Reset Clarion paste preference";
+
       api.onToolbarCreate((toolbar) => {
         toolbar.addButton({
           id: "clarion-code",
@@ -81,8 +84,8 @@ export default {
           toolbar.addButton({
             id: "clarion-reset-preference",
             group: "insertions",
-            icon: "undo",
-            title: "Reset Clarion paste preference",
+            icon: "rotate-left",
+            title: "js.composer.clarion_reset_preference",
 
             perform() {
               localStorage.removeItem(STORAGE_KEY);

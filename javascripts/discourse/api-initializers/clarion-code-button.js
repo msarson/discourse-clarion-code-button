@@ -83,7 +83,7 @@ export default {
         toolbar.addButton({
           id: "clarion-reset-preference",
           group: "insertions",
-          icon: "times",
+          icon: "code",
           title: "js.composer.clarion_reset_preference",
 
           perform() {

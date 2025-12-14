@@ -60,13 +60,15 @@ export default {
         "Reset Clarion paste preference";
 
       api.addComposerToolbarPopupMenuOption({
-        action: () => {
+        id: "clarion-reset-preference",
+        label: "js.composer.clarion_reset_preference",
+        condition: () => !!localStorage.getItem(STORAGE_KEY),
+        action() {
           localStorage.removeItem(STORAGE_KEY);
           console.info("Clarion paste preference reset");
-        },
-        label: "js.composer.clarion_reset_preference",
-        condition: () => !!localStorage.getItem(STORAGE_KEY)
+        }
       });
+
 
       api.onToolbarCreate((toolbar) => {
         toolbar.addButton({

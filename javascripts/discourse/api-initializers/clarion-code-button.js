@@ -35,41 +35,6 @@ function detectClarionCode(text) {
   return score >= 8;
 }
 
-function showClarionPasteDialog() {
-  return new Promise((resolve) => {
-    const dialog = document.createElement("div");
-    dialog.className = "clarion-paste-dialog";
-    dialog.innerHTML = `
-      <div class="clarion-paste-overlay"></div>
-      <div class="clarion-paste-modal">
-        <h3>Clarion Code Detected</h3>
-        <p>This looks like Clarion code. Would you like to wrap it in a code block?</p>
-        <div class="clarion-paste-buttons">
-          <button class="btn btn-primary clarion-paste-yes">Yes, Wrap It</button>
-          <button class="btn clarion-paste-no">No, Paste As-Is</button>
-        </div>
-        <div class="clarion-paste-remember">
-          <label>
-            <input type="checkbox" class="clarion-paste-checkbox" />
-            Remember my choice
-          </label>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(dialog);
-
-    const handleChoice = (shouldWrap) => {
-      const remember = dialog.querySelector(".clarion-paste-checkbox").checked;
-      document.body.removeChild(dialog);
-      resolve({ shouldWrap, remember });
-    };
-
-    dialog.querySelector(".clarion-paste-yes").addEventListener("click", () => handleChoice(true));
-    dialog.querySelector(".clarion-paste-no").addEventListener("click", () => handleChoice(false));
-  });
-}
-
 export default {
   name: "clarion-code-toolbar-button",
 
@@ -125,7 +90,7 @@ export default {
         }
         composerElement.dataset.clarionPasteHandlerAttached = "true";
 
-        const handlePaste = async (event) => {
+        const handlePaste = (event) => {
           const pastedText = event.clipboardData.getData("text/plain");
           const trimmedText = pastedText ? pastedText.trim() : "";
 
@@ -163,31 +128,19 @@ export default {
             } else if (pref === "never" && !forcePrompt) {
               insertText = pastedText;
             } else {
-              const { shouldWrap, remember } = await showClarionPasteDialog();
+              const shouldWrap = confirm(I18n.t("js.composer.clarion_code_detected"));
 
               if (shouldWrap) {
                 insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-                if (remember) {
-                  localStorage.setItem(STORAGE_KEY, "always");
-                }
-              } else {
-                if (remember) {
-                  localStorage.setItem(STORAGE_KEY, "never");
-                }
+              }
+
+              const remember = confirm("Remember this choice for future Clarion pastes?");
+              if (remember) {
+                localStorage.setItem(STORAGE_KEY, shouldWrap ? "always" : "never");
               }
             }
 
-            // Manually insert text since we're outside the trusted event context
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const beforeText = textarea.value.substring(0, start);
-            const afterText = textarea.value.substring(end);
-
-            textarea.value = beforeText + insertText + afterText;
-            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
-
-            // Trigger input event to ensure Discourse updates
-            textarea.dispatchEvent(new Event("input", { bubbles: true }));
+            document.execCommand("insertText", false, insertText);
           }
 
         };

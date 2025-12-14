@@ -79,20 +79,22 @@ export default {
           }
         });
 
-        // Conditionally add reset button if preference exists
-        if (localStorage.getItem(STORAGE_KEY) !== null) {
-          toolbar.addButton({
-            id: "clarion-reset-preference",
-            group: "insertions",
-            icon: "trash",
-            title: "js.composer.clarion_reset_preference",
+        // Always add reset button
+        toolbar.addButton({
+          id: "clarion-reset-preference",
+          group: "insertions",
+          icon: "trash",
+          title: "js.composer.clarion_reset_preference",
 
-            perform() {
+          perform() {
+            if (localStorage.getItem(STORAGE_KEY)) {
               localStorage.removeItem(STORAGE_KEY);
               console.info("Clarion paste preference reset");
+            } else {
+              console.info("No Clarion paste preference to reset");
             }
-          });
-        }
+          }
+        });
       });
 
       // Add paste handler

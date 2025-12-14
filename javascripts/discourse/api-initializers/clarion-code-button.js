@@ -99,6 +99,19 @@ export default {
           title: "js.composer.clarion_code",
 
           perform(e) {
+            // Check if Shift key is held - if so, reset the preference
+            if (window.event && window.event.shiftKey) {
+              localStorage.removeItem(STORAGE_KEY);
+              // Show a brief confirmation
+              const btn = document.querySelector('[data-id="clarion-code"]');
+              if (btn) {
+                const originalTitle = btn.getAttribute('title');
+                btn.setAttribute('title', 'Paste preference reset!');
+                setTimeout(() => btn.setAttribute('title', originalTitle), 2000);
+              }
+              return;
+            }
+
             e.applySurround(
               "```clarion\n",
               "\n```",
@@ -149,11 +162,13 @@ export default {
             event.preventDefault();
 
             const pref = localStorage.getItem(STORAGE_KEY);
+            const shiftPressed = event.shiftKey;
             let insertText = pastedText;
 
-            if (pref === "always") {
+            // If Shift is held, always show dialog regardless of preference
+            if (pref === "always" && !shiftPressed) {
               insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-            } else if (pref === "never") {
+            } else if (pref === "never" && !shiftPressed) {
               insertText = pastedText;
             } else {
               const { shouldWrap, remember } = await showClarionPasteDialog();
@@ -170,7 +185,17 @@ export default {
               }
             }
 
-            document.execCommand("insertText", false, insertText);
+            // Manually insert text since we're outside the trusted event context
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const beforeText = textarea.value.substring(0, start);
+            const afterText = textarea.value.substring(end);
+
+            textarea.value = beforeText + insertText + afterText;
+            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+
+            // Trigger input event to ensure Discourse updates
+            textarea.dispatchEvent(new Event("input", { bubbles: true }));
           }
 
         };

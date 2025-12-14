@@ -54,10 +54,19 @@ export default {
         "Clarion code here";
 
       I18n.translations[locale].js.composer.clarion_code_detected =
-        "This looks like Clarion code. Wrap it in a Clarion code block?";
+        "This looks like Clarion code.\nClick OK to wrap it in a Clarion code block.\n\nTip: hold R while clicking OK to always remember this choice.";
 
       I18n.translations[locale].js.composer.clarion_reset_preference =
         "Reset Clarion paste preference";
+
+      api.addComposerToolbarPopupMenuOption({
+        action: () => {
+          localStorage.removeItem(STORAGE_KEY);
+          console.info("Clarion paste preference reset");
+        },
+        label: "js.composer.clarion_reset_preference",
+        condition: () => !!localStorage.getItem(STORAGE_KEY)
+      });
 
       api.onToolbarCreate((toolbar) => {
         toolbar.addButton({
@@ -76,23 +85,6 @@ export default {
                 useBlockMode: true
               }
             );
-          }
-        });
-
-        // Always add reset button
-        toolbar.addButton({
-          id: "clarion-reset-preference",
-          group: "insertions",
-          icon: "code",
-          title: "js.composer.clarion_reset_preference",
-
-          perform() {
-            if (localStorage.getItem(STORAGE_KEY)) {
-              localStorage.removeItem(STORAGE_KEY);
-              console.info("Clarion paste preference reset");
-            } else {
-              console.info("No Clarion paste preference to reset");
-            }
           }
         });
       });
@@ -127,41 +119,62 @@ export default {
           const fenceMatches = textBeforeCursor.match(/^```/gm);
           const fenceCount = fenceMatches ? fenceMatches.length : 0;
 
-          // If odd number of fences, we're inside a code block
-          if (fenceCount % 2 === 1) return;
+          let rKeyPressed = false;
 
-          if (detectClarionCode(trimmedText)) {
-            event.preventDefault();
-
-            const pref = localStorage.getItem(STORAGE_KEY);
-            let insertText = pastedText;
-
-            if (pref === "always") {
-              insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-            } else if (pref === "never") {
-              insertText = pastedText;
-            } else {
-              const response = prompt(
-                "Clarion code detected.\n\nType:\n  y = wrap this time only\n  a = always wrap\n  n = never wrap\n\nCancel = paste as-is (this time only)"
-              );
-
-              if (response === "y") {
-                insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-              } else if (response === "a") {
-                insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-                localStorage.setItem(STORAGE_KEY, "always");
-              } else if (response === "n") {
-                localStorage.setItem(STORAGE_KEY, "never");
-              }
+          const handleKeyDown = (event) => {
+            if (event.key === "r" || event.key === "R") {
+              rKeyPressed = true;
             }
+          };
 
-            document.execCommand("insertText", false, insertText);
-          }
+          const handleKeyUp = (event) => {
+            if (event.key === "r" || event.key === "R") {
+              rKeyPressed = false;
+            }
+          };
 
-        };
+          document.addEventListener("keydown", handleKeyDown);
+          document.addEventListener("keyup", handleKeyUp);
 
-        composerElement.addEventListener("paste", handlePaste);
-      });
-    });
-  }
-};
+          const handlePaste = (event) => {
+            const pastedText = event.clipboardData.getData("text/plain");
+            const trimmedText = pastedText ? pastedText.trim() : "";
+
+            // Ignore empty or whitespace-only pastes
+            if (!trimmedText) return;
+
+            // Check if cursor is inside a fenced code block
+            const textarea = event.target;
+            const text = textarea.value;
+            const cursorPos = textarea.selectionStart;
+            const textBeforeCursor = text.substring(0, cursorPos);
+
+            // Count backtick fence markers before cursor
+            const fenceMatches = textBeforeCursor.match(/^```/gm);
+            const fenceCount = fenceMatches ? fenceMatches.length : 0;
+
+            // If odd number of fences, we're inside a code block
+            if (fenceCount % 2 === 1) return;
+
+            if (detectClarionCode(trimmedText)) {
+              event.preventDefault();
+
+              const pref = localStorage.getItem(STORAGE_KEY);
+              let insertText = pastedText;
+
+              if (pref === "always") {
+                insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
+              } else if (pref === "never") {
+                insertText = pastedText;
+              } else {
+                const shouldWrap = confirm(I18n.t("js.composer.clarion_code_detected"));
+
+                if (shouldWrap) {
+                  insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
+                  if (rKeyPressed) {
+                    localStorage.setItem(STORAGE_KEY, "always");
+                  }
+                } else {
+                  if (rKeyPressed) {
+                    localStorage.setItem(STORAGE_KEY, "never");
+                  }

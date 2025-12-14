@@ -54,7 +54,10 @@ export default {
         "Clarion code here";
 
       I18n.translations[locale].js.composer.clarion_code_detected =
-        "This looks like Clarion code.\nClick OK to wrap it in a Clarion code block.\n\nTip: hold R while clicking OK to always remember this choice.";
+        "This looks like Clarion code. Wrap it in a code block?\n\n(Type 'yes' to remember this choice for future pastes, or leave blank for one-time only)";
+
+      I18n.translations[locale].js.composer.clarion_code_detected_cancel =
+        "Don't wrap in a code block?\n\n(Type 'yes' to remember this choice for future pastes, or leave blank for one-time only)";
 
       I18n.translations[locale].js.composer.clarion_reset_preference =
         "Reset Clarion paste preference";
@@ -104,23 +107,6 @@ export default {
         }
         composerElement.dataset.clarionPasteHandlerAttached = "true";
 
-        let rKeyPressed = false;
-
-        const handleKeyDown = (event) => {
-          if (event.key === "r" || event.key === "R") {
-            rKeyPressed = true;
-          }
-        };
-
-        const handleKeyUp = (event) => {
-          if (event.key === "r" || event.key === "R") {
-            rKeyPressed = false;
-          }
-        };
-
-        document.addEventListener("keydown", handleKeyDown);
-        document.addEventListener("keyup", handleKeyUp);
-
         const handlePaste = (event) => {
           const pastedText = event.clipboardData.getData("text/plain");
           const trimmedText = pastedText ? pastedText.trim() : "";
@@ -152,15 +138,18 @@ export default {
             } else if (pref === "never") {
               insertText = pastedText;
             } else {
-              const shouldWrap = confirm(I18n.t("js.composer.clarion_code_detected"));
+              const response = prompt(I18n.t("js.composer.clarion_code_detected"));
 
-              if (shouldWrap) {
+              if (response !== null) {
+                // User clicked OK
                 insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-                if (rKeyPressed) {
+                if (response.trim().toLowerCase() === "yes") {
                   localStorage.setItem(STORAGE_KEY, "always");
                 }
               } else {
-                if (rKeyPressed) {
+                // User clicked Cancel - ask if they want to remember "never wrap"
+                const neverResponse = prompt(I18n.t("js.composer.clarion_code_detected_cancel"));
+                if (neverResponse && neverResponse.trim().toLowerCase() === "yes") {
                   localStorage.setItem(STORAGE_KEY, "never");
                 }
               }

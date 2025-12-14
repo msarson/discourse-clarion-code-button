@@ -40,6 +40,7 @@ export default {
     console.log("[Clarion] Initializer running");
 
     withPluginApi("0.8", (api) => {
+      const pluginApi = api;
       const locale = I18n.currentLocale();
 
       I18n.translations[locale] ||= {};
@@ -119,7 +120,7 @@ export default {
           if (detectClarionCode(trimmedText)) {
             console.log("[Clarion] Clarion code detected!");
 
-            const composer = api.getCurrentComposer();
+            const composer = pluginApi.getCurrentComposer();
             if (!composer) return;
 
             event.preventDefault();

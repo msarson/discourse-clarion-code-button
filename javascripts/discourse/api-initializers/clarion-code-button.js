@@ -40,7 +40,6 @@ export default {
 
   initialize() {
     withPluginApi("0.8", (api) => {
-      api.addIconSprite("trash");
       const pluginApi = api;
       const locale = I18n.currentLocale();
 
@@ -84,7 +83,7 @@ export default {
         toolbar.addButton({
           id: "clarion-reset-preference",
           group: "insertions",
-          icon: "trash",
+          icon: "times",
           title: "js.composer.clarion_reset_preference",
 
           perform() {

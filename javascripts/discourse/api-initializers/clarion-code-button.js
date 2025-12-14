@@ -128,7 +128,14 @@ export default {
             textarea.setSelectionRange(newCursorPos, newCursorPos);
 
             // 🔴 This is essential — tells Discourse the content changed
-            textarea.dispatchEvent(new Event("input", { bubbles: true }));
+            const inputEvent = new InputEvent("input", {
+              bubbles: true,
+              cancelable: true,
+              inputType: "insertFromPaste",
+              data: insertText
+            });
+
+            textarea.dispatchEvent(inputEvent);
           }
 
         };

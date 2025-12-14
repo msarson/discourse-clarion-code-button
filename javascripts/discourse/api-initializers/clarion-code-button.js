@@ -1,6 +1,8 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
 import I18n from "I18n";
 
+const STORAGE_KEY = "clarion.autoWrapOnPaste";
+
 function getClarionKeywords() {
   // Extract keywords from the highlighter definition patterns
   const hardKeywords = "ACCEPT|AND|BREAK|BY|CASE|CHOOSE|CYCLE|DO|ELSE|ELSIF|END|EXECUTE|EXIT|FUNCTION|GOTO|IF|LOOP|MEMBER|NEW|NOT|OF|OR|OROF|PARENT|PROCEDURE|PROGRAM|RETURN|ROUTINE|SELF|THEN|TIMES|TO|UNTIL|WHILE";
@@ -111,10 +113,20 @@ export default {
           if (detectClarionCode(trimmedText)) {
             event.preventDefault();
 
+            const pref = localStorage.getItem(STORAGE_KEY);
             let insertText = pastedText;
 
-            if (confirm(I18n.t("js.composer.clarion_code_detected"))) {
+            if (pref === "always") {
               insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
+            } else if (pref === "never") {
+              insertText = pastedText;
+            } else {
+              if (confirm(I18n.t("js.composer.clarion_code_detected"))) {
+                insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
+                localStorage.setItem(STORAGE_KEY, "always");
+              } else {
+                localStorage.setItem(STORAGE_KEY, "never");
+              }
             }
 
             document.execCommand("insertText", false, insertText);

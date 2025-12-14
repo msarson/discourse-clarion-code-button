@@ -12,25 +12,25 @@ function getClarionKeywords() {
 }
 
 function detectClarionCode(text) {
-  const keywords = getClarionKeywords();
-  const patterns = keywords.map(keywordGroup =>
-    new RegExp(`\\b(${keywordGroup})\\b`, 'i')
-  );
+  const [hardKeywords, softKeywords, types, functions] = getClarionKeywords();
 
-  // Check for Clarion-specific syntax patterns
-  const syntaxPatterns = [
-    /^[A-Za-z_][A-Za-z0-9_]*\s+PROCEDURE/im,  // PROCEDURE declaration
-    /!\s*.+$/m,  // Comment style
-    /\|\s*.+$/m,  // Alternative comment style
-    /@[Nn][\-]?[0-9\.]*~/,  // Picture format
-  ];
+  // Count occurrences of keywords in each group
+  const countMatches = (keywordGroup) => {
+    const regex = new RegExp(`\\b(${keywordGroup})\\b`, 'gi');
+    const matches = text.match(regex);
+    return matches ? matches.length : 0;
+  };
 
-  const keywordMatches = patterns.filter(pattern => pattern.test(text)).length;
-  const syntaxMatches = syntaxPatterns.filter(pattern => pattern.test(text)).length;
-  const totalMatches = keywordMatches + syntaxMatches;
+  const hardCount = countMatches(hardKeywords);
+  const softCount = countMatches(softKeywords);
+  const typeCount = countMatches(types);
+  const functionCount = countMatches(functions);
 
-  // Require at least one syntax pattern and 5 total matches
-  return syntaxMatches >= 1 && totalMatches >= 5;
+  // Apply weights: hard=4, soft=2, types=2, functions=1
+  const score = (hardCount * 4) + (softCount * 2) + (typeCount * 2) + (functionCount * 1);
+
+  // Threshold tuned for short fragments and full blocks
+  return score >= 8;
 }
 
 export default {

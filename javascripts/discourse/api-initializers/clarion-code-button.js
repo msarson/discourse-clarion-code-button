@@ -84,12 +84,12 @@ export default {
           toolbar.addButton({
             id: "clarion-reset-preference",
             group: "insertions",
-            icon: "rotate-left",
+            icon: "trash-alt",
             title: "js.composer.clarion_reset_preference",
 
             perform() {
               localStorage.removeItem(STORAGE_KEY);
-              alert("Clarion paste preference has been reset.");
+              console.info("Clarion paste preference reset");
             }
           });
         }
@@ -139,15 +139,17 @@ export default {
             } else if (pref === "never") {
               insertText = pastedText;
             } else {
-              const shouldWrap = confirm(I18n.t("js.composer.clarion_code_detected"));
+              const response = prompt(
+                "Clarion code detected.\n\nType:\n  y = wrap this time only\n  a = always wrap\n  n = never wrap\n\nCancel = paste as-is (this time only)"
+              );
 
-              if (shouldWrap) {
+              if (response === "y") {
                 insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-              }
-
-              const remember = confirm("Remember this choice for future Clarion pastes?");
-              if (remember) {
-                localStorage.setItem(STORAGE_KEY, shouldWrap ? "always" : "never");
+              } else if (response === "a") {
+                insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
+                localStorage.setItem(STORAGE_KEY, "always");
+              } else if (response === "n") {
+                localStorage.setItem(STORAGE_KEY, "never");
               }
             }
 

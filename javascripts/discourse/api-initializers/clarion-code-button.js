@@ -40,6 +40,7 @@ export default {
 
   initialize() {
     withPluginApi("0.8", (api) => {
+      api.addIconSprite("trash");
       const pluginApi = api;
       const locale = I18n.currentLocale();
 

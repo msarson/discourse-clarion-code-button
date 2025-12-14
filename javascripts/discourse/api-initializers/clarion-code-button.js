@@ -119,24 +119,16 @@ export default {
           if (detectClarionCode(trimmedText)) {
             console.log("[Clarion] Clarion code detected!");
 
-            const composerService = api.container.lookup("service:composer");
-            if (!composerService || !composerService.model) return;
+            const composer = api.getCurrentComposer();
+            if (!composer) return;
 
             event.preventDefault();
 
             if (confirm(I18n.t("js.composer.clarion_code_detected"))) {
               const wrappedText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-              composerService.model.replaceText(
-                textarea.selectionStart,
-                textarea.selectionEnd,
-                wrappedText
-              );
+              composer.replaceSelection(wrappedText);
             } else {
-              composerService.model.replaceText(
-                textarea.selectionStart,
-                textarea.selectionEnd,
-                pastedText
-              );
+              composer.replaceSelection(pastedText);
             }
           }
         };

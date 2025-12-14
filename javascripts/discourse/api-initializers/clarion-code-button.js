@@ -170,3 +170,6 @@ export default {
 
         composerElement.addEventListener("paste", handlePaste);
       });
+    });
+  }
+};

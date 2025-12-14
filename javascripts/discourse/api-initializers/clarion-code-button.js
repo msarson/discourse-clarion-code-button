@@ -26,10 +26,33 @@ function looksLikeBraceLanguage(text) {
 
   return false;
 }
+function looksLikeSql(text) {
+  // Strong T-SQL / SQL Server signals
+  if (/@[A-Za-z_][A-Za-z0-9_]*/.test(text)) return true;                 // @vars
+  if (/\bSET\s+NOCOUNT\s+ON\b/i.test(text)) return true;                // SET NOCOUNT ON
+  if (/\b(CREATE|ALTER)\s+PROC(EDURE)?\b/i.test(text)) return true;      // CREATE/ALTER PROC/PROCEDURE
+  if (/(\[[^\]\r\n]+\]\s*\.\s*)+\[[^\]\r\n]+\]/.test(text)) return true; // [dbo].[Table] style
+  if (/^\s*GO\s*$/im.test(text)) return true;                           // GO on its own line
+  if (/--|\/\*/.test(text)) return true;                                // SQL comment styles
+
+  // High-confidence SQL statement shapes (require two to avoid random text)
+  const sqlShapeHits = [
+    /\bSELECT\b[\s\S]{0,200}\bFROM\b/i.test(text),
+    /\bINSERT\s+INTO\b/i.test(text),
+    /\bUPDATE\b[\s\S]{0,120}\bSET\b/i.test(text),
+    /\bDELETE\s+FROM\b/i.test(text),
+    /\bJOIN\b/i.test(text),
+    /\bWHERE\b/i.test(text),
+    /\bGROUP\s+BY\b/i.test(text),
+    /\bORDER\s+BY\b/i.test(text),
+  ].filter(Boolean).length;
+
+  return sqlShapeHits >= 2;
+}
 
 function detectClarionCode(text) {
   // Early veto: if it looks like a brace language, it's not Clarion
-  if (looksLikeBraceLanguage(text)) {
+  if (looksLikeBraceLanguage(text) || looksLikeSql(text)) {
     return false;
   }
 

@@ -134,13 +134,10 @@ export default {
 
 
       api.onToolbarCreate((toolbar) => {
-        // Remove the default code button to avoid duplicates
-        toolbar.removeButton?.("code");
-        
         toolbar.addButton({
           id: "clarion-code",
           group: "insertions",
-          icon: "code",
+          icon: "file-code",
           title: "js.composer.clarion_code",
 
           perform(e) {

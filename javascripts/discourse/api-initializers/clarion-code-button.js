@@ -136,14 +136,14 @@ export default {
       api.onToolbarCreate((toolbar) => {
         toolbar.addButton({
           id: "clarion-code",
+          group: "insertions",
           icon: "code",
-          group: "extras",
           title: "js.composer.clarion_code",
 
           perform(e) {
             const selected = e.getSelected();
             const hasSelection = selected && selected.value.length > 0;
-
+            
             e.applySurround(
               hasSelection ? "```clarion" : "```clarion\n",
               hasSelection ? "```" : "\n```",

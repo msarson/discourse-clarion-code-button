@@ -204,13 +204,18 @@ export default {
               const response = prompt(I18n.t("js.composer.clarion_code_detected"));
 
               if (response !== null) {
-                // User clicked OK
+                // User clicked OK - wrap the code
                 insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
                 if (response.trim().toLowerCase() === "yes") {
                   localStorage.setItem(STORAGE_KEY, "always");
                 }
+              } else {
+                // User clicked Cancel - don't wrap, but ask if they want to remember
+                const neverResponse = prompt(I18n.t("js.composer.clarion_code_detected_cancel"));
+                if (neverResponse !== null && neverResponse.trim().toLowerCase() === "yes") {
+                  localStorage.setItem(STORAGE_KEY, "never");
+                }
               }
-              // If user clicked Cancel (response === null), insertText stays as pastedText (no wrapping)
             }
 
             document.execCommand("insertText", false, insertText);

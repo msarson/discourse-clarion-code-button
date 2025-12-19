@@ -137,7 +137,7 @@ export default {
         toolbar.addButton({
           id: "clarion-code",
           group: "insertions",
-          icon: "file-code",
+          icon: "code",
           title: "js.composer.clarion_code",
 
           perform(e) {

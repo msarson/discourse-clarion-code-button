@@ -136,14 +136,14 @@ export default {
       api.onToolbarCreate((toolbar) => {
         toolbar.addButton({
           id: "clarion-code",
-          group: "insertions",
-          icon: "code",
+          icon: "file-code-o",
+          group: "extras",
           title: "js.composer.clarion_code",
 
           perform(e) {
             const selected = e.getSelected();
             const hasSelection = selected && selected.value.length > 0;
-            
+
             e.applySurround(
               hasSelection ? "```clarion" : "```clarion\n",
               hasSelection ? "```" : "\n```",
@@ -207,7 +207,7 @@ export default {
                 // User clicked OK - wrap the code this time
                 const answer = response.trim().toLowerCase();
                 insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-                
+
                 if (answer === "always") {
                   localStorage.setItem(STORAGE_KEY, "always");
                 } else if (answer === "never") {

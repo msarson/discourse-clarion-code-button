@@ -115,7 +115,7 @@ export default {
         "Clarion code here";
 
       I18n.translations[locale].js.composer.clarion_code_detected =
-        "This looks like Clarion code. Wrap it in a code block?\n\n(Type 'yes' to remember your answer for future pastes, or leave blank for one-time only)";
+        "This looks like Clarion code. Wrap it in a code block?\n\n(Type 'yes' and click OK to remember, or leave blank for one-time only. Click Cancel to not wrap.)";
 
       I18n.translations[locale].js.composer.clarion_code_detected_cancel =
         "Don't wrap in a code block?\n\n(Type 'yes' to remember this choice for future pastes, or leave blank for one-time only)";
@@ -210,8 +210,12 @@ export default {
                   localStorage.setItem(STORAGE_KEY, "always");
                 }
               } else {
-                // User clicked Cancel - don't wrap
-                // insertText stays as pastedText (no wrapping)
+                // User clicked Cancel - don't wrap, but need to check if they want to remember
+                // Since we can't get the value on cancel, show a second prompt to confirm
+                const rememberNever = prompt("Type 'yes' to remember not to wrap Clarion code, or leave blank for one-time only");
+                if (rememberNever !== null && rememberNever.trim().toLowerCase() === "yes") {
+                  localStorage.setItem(STORAGE_KEY, "never");
+                }
               }
             }
 

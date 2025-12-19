@@ -115,7 +115,7 @@ export default {
         "Clarion code here";
 
       I18n.translations[locale].js.composer.clarion_code_detected =
-        "This looks like Clarion code. Wrap it in a code block?\n\n(Type 'yes' and click OK to remember, or leave blank for one-time only. Click Cancel to not wrap.)";
+        "This looks like Clarion code. Wrap it in a code block?\n\nType 'always' to always wrap, 'never' to never wrap, or leave blank for one-time only.\nClick OK to wrap this time, Cancel to skip this time.";
 
       I18n.translations[locale].js.composer.clarion_code_detected_cancel =
         "Don't wrap in a code block?\n\n(Type 'yes' to remember this choice for future pastes, or leave blank for one-time only)";
@@ -204,19 +204,17 @@ export default {
               const response = prompt(I18n.t("js.composer.clarion_code_detected"));
 
               if (response !== null) {
-                // User clicked OK - wrap the code
+                // User clicked OK - wrap the code this time
+                const answer = response.trim().toLowerCase();
                 insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-                if (response.trim().toLowerCase() === "yes") {
+                
+                if (answer === "always") {
                   localStorage.setItem(STORAGE_KEY, "always");
-                }
-              } else {
-                // User clicked Cancel - don't wrap, but need to check if they want to remember
-                // Since we can't get the value on cancel, show a second prompt to confirm
-                const rememberNever = prompt("Type 'yes' to remember not to wrap Clarion code, or leave blank for one-time only");
-                if (rememberNever !== null && rememberNever.trim().toLowerCase() === "yes") {
+                } else if (answer === "never") {
                   localStorage.setItem(STORAGE_KEY, "never");
                 }
               }
+              // User clicked Cancel - don't wrap (insertText stays as pastedText)
             }
 
             document.execCommand("insertText", false, insertText);

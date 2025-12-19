@@ -141,8 +141,8 @@ export default {
           title: "js.composer.clarion_code",
 
           perform(e) {
-            const selected = e.getSelected();
-            const hasSelection = selected && selected.value.length > 0;
+            const selected = e.selected;
+            const hasSelection = selected && selected.value && selected.value.length > 0;
             
             e.applySurround(
               hasSelection ? "```clarion" : "```clarion\n",

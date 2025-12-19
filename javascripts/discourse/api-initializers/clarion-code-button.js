@@ -142,8 +142,8 @@ export default {
 
           perform(e) {
             e.applySurround(
-              "```clarion\n",
-              "\n```",
+              "```clarion",
+              "```",
               "clarion_code_placeholder",
               {
                 multiline: false,

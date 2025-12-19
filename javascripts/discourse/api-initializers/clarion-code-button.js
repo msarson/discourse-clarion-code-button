@@ -136,7 +136,7 @@ export default {
       api.onToolbarCreate((toolbar) => {
         toolbar.addButton({
           id: "clarion-code",
-          icon: "file-code-o",
+          icon: "code",
           group: "extras",
           title: "js.composer.clarion_code",
 

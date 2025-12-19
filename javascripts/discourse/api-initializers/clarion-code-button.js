@@ -141,9 +141,12 @@ export default {
           title: "js.composer.clarion_code",
 
           perform(e) {
+            const selected = e.getSelected();
+            const hasSelection = selected && selected.value.length > 0;
+            
             e.applySurround(
-              "```clarion",
-              "```",
+              hasSelection ? "```clarion" : "```clarion\n",
+              hasSelection ? "```" : "\n```",
               "clarion_code_placeholder",
               {
                 multiline: false,

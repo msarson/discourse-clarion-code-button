@@ -209,13 +209,8 @@ export default {
                 if (response.trim().toLowerCase() === "yes") {
                   localStorage.setItem(STORAGE_KEY, "always");
                 }
-              } else {
-                // User clicked Cancel - ask if they want to remember "never wrap"
-                const neverResponse = prompt(I18n.t("js.composer.clarion_code_detected_cancel"));
-                if (neverResponse && neverResponse.trim().toLowerCase() === "yes") {
-                  localStorage.setItem(STORAGE_KEY, "never");
-                }
               }
+              // If user clicked Cancel (response === null), insertText stays as pastedText (no wrapping)
             }
 
             document.execCommand("insertText", false, insertText);

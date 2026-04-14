@@ -4,6 +4,15 @@ import { detectClarionCode } from "../lib/clarion-detection";
 
 const STORAGE_KEY = "clarion-code-button.wrapPreference";
 
+// Insert text at the captured selection point, then notify Ember of the change.
+// Uses setRangeText (reliable after async dialog) rather than execCommand.
+function doInsert(textarea, text, selStart, selEnd) {
+  if (!textarea?.isConnected) return;
+  textarea.focus();
+  textarea.setRangeText(text, selStart, selEnd, "end");
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 export default {
   name: "clarion-code-toolbar-button",
 
@@ -18,16 +27,20 @@ export default {
 
       I18n.translations[locale].js.composer.clarion_code =
         "Insert Clarion code block";
-
       I18n.translations[locale].js.composer.clarion_code_placeholder =
         "Clarion code here";
-
-      I18n.translations[locale].js.composer.clarion_code_detected =
-        "This looks like Clarion code. Wrap it in a code block?\n\nType 'always' to always wrap, 'never' to never wrap, or leave blank for one-time only.\nClick OK to wrap this time, Cancel to skip this time.";
-
-      I18n.translations[locale].js.composer.clarion_code_detected_cancel =
-        "Don't wrap in a code block?\n\n(Type 'yes' to remember this choice for future pastes, or leave blank for one-time only)";
-
+      I18n.translations[locale].js.composer.clarion_dialog_title =
+        "Clarion code detected";
+      I18n.translations[locale].js.composer.clarion_dialog_message =
+        "This looks like Clarion code. Would you like to wrap it in a code block?";
+      I18n.translations[locale].js.composer.clarion_wrap =
+        "Wrap";
+      I18n.translations[locale].js.composer.clarion_wrap_always =
+        "Always wrap";
+      I18n.translations[locale].js.composer.clarion_skip_never =
+        "Never wrap";
+      I18n.translations[locale].js.composer.clarion_skip =
+        "Skip";
       I18n.translations[locale].js.composer.clarion_reset_preference =
         "Reset Clarion paste preference";
 
@@ -39,7 +52,6 @@ export default {
           console.info("Clarion paste preference reset");
         }
       });
-
 
       api.onToolbarCreate((toolbar) => {
         toolbar.addButton({
@@ -56,77 +68,106 @@ export default {
               hasSelection ? "```clarion" : "```clarion\n",
               hasSelection ? "```" : "\n```",
               "clarion_code_placeholder",
-              {
-                multiline: false,
-                useBlockMode: true
-              }
+              { multiline: false, useBlockMode: true }
             );
           }
         });
       });
 
       // Add paste handler
+      let pastePromptOpen = false;
+
       api.onAppEvent("composer:opened", () => {
         const composerElement = document.querySelector(".d-editor-input");
-        if (!composerElement) {
-          return;
-        }
+        if (!composerElement) return;
 
         // Prevent duplicate handlers
-        if (composerElement.dataset.clarionPasteHandlerAttached) {
-          return;
-        }
+        if (composerElement.dataset.clarionPasteHandlerAttached) return;
         composerElement.dataset.clarionPasteHandlerAttached = "true";
 
         const handlePaste = (event) => {
           const pastedText = event.clipboardData.getData("text/plain");
           const trimmedText = pastedText ? pastedText.trim() : "";
 
-          // Ignore empty or whitespace-only pastes
           if (!trimmedText) return;
 
-          // Check if cursor is inside a fenced code block
           const textarea = event.target;
-          const text = textarea.value;
-          const cursorPos = textarea.selectionStart;
-          const textBeforeCursor = text.substring(0, cursorPos);
+          const textBeforeCursor = textarea.value.substring(0, textarea.selectionStart);
+          const fenceCount = (textBeforeCursor.match(/^```/gm) || []).length;
 
-          // Count backtick fence markers before cursor
-          const fenceMatches = textBeforeCursor.match(/^```/gm);
-          const fenceCount = fenceMatches ? fenceMatches.length : 0;
-
-          // If odd number of fences, we're inside a code block
+          // Inside a code block — leave native paste alone
           if (fenceCount % 2 === 1) return;
 
-          if (detectClarionCode(trimmedText)) {
-            event.preventDefault();
+          if (!detectClarionCode(trimmedText)) return;
 
-            const pref = localStorage.getItem(STORAGE_KEY);
-            let insertText = pastedText;
+          const pref = localStorage.getItem(STORAGE_KEY);
 
-            if (pref === "always") {
-              insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
-            } else if (pref === "never") {
-              insertText = pastedText;
-            } else {
-              const response = prompt(I18n.t("js.composer.clarion_code_detected"));
+          // "never" — let browser handle paste natively, no intervention
+          if (pref === "never") return;
 
-              if (response !== null) {
-                // User clicked OK - wrap the code this time
-                const answer = response.trim().toLowerCase();
-                insertText = `\`\`\`clarion\n${pastedText}\n\`\`\``;
+          // From here we intercept the paste
+          event.preventDefault();
 
-                if (answer === "always") {
-                  localStorage.setItem(STORAGE_KEY, "always");
-                } else if (answer === "never") {
-                  localStorage.setItem(STORAGE_KEY, "never");
-                }
-              }
-              // User clicked Cancel - don't wrap (insertText stays as pastedText)
-            }
+          // Capture insertion point before any async work
+          const selStart = textarea.selectionStart;
+          const selEnd = textarea.selectionEnd;
 
-            document.execCommand("insertText", false, insertText);
+          if (pref === "always") {
+            doInsert(textarea, `\`\`\`clarion\n${pastedText}\n\`\`\``, selStart, selEnd);
+            return;
           }
+
+          // Avoid stacking multiple dialogs from rapid pastes
+          if (pastePromptOpen) return;
+          pastePromptOpen = true;
+
+          const dialog = pluginApi.container.lookup("service:dialog");
+          if (!dialog) {
+            // Fallback: no dialog service — just insert plain
+            pastePromptOpen = false;
+            doInsert(textarea, pastedText, selStart, selEnd);
+            return;
+          }
+
+          const wrap = () => doInsert(textarea, `\`\`\`clarion\n${pastedText}\n\`\`\``, selStart, selEnd);
+          const skip = () => doInsert(textarea, pastedText, selStart, selEnd);
+
+          dialog.dialog({
+            title: I18n.t("js.composer.clarion_dialog_title"),
+            message: I18n.t("js.composer.clarion_dialog_message"),
+            // Escape / backdrop click = skip (paste is already intercepted)
+            didCancel: () => { pastePromptOpen = false; skip(); },
+            buttons: [
+              {
+                label: I18n.t("js.composer.clarion_wrap"),
+                class: "btn-primary",
+                action() { pastePromptOpen = false; wrap(); },
+              },
+              {
+                label: I18n.t("js.composer.clarion_wrap_always"),
+                class: "btn-default",
+                action() {
+                  pastePromptOpen = false;
+                  localStorage.setItem(STORAGE_KEY, "always");
+                  wrap();
+                },
+              },
+              {
+                label: I18n.t("js.composer.clarion_skip_never"),
+                class: "btn-default",
+                action() {
+                  pastePromptOpen = false;
+                  localStorage.setItem(STORAGE_KEY, "never");
+                  skip();
+                },
+              },
+              {
+                label: I18n.t("js.composer.clarion_skip"),
+                class: "btn-default",
+                action() { pastePromptOpen = false; skip(); },
+              },
+            ],
+          });
         };
 
         composerElement.addEventListener("paste", handlePaste);

@@ -131,23 +131,27 @@ export default {
 
           const wrap = () => doInsert(textarea, `\`\`\`clarion\n${pastedText}\n\`\`\``, selStart, selEnd);
           const skip = () => doInsert(textarea, pastedText, selStart, selEnd);
+          let handled = false;
 
           dialog.dialog({
             title: I18n.t("js.composer.clarion_dialog_title"),
             message: I18n.t("js.composer.clarion_dialog_message"),
-            // Escape / backdrop click = skip (paste is already intercepted)
-            didCancel: () => { pastePromptOpen = false; skip(); },
+            type: "confirm",
+            // Escape / backdrop: paste already intercepted, insert plain text.
+            // 'handled' prevents double-insert since handleButtonAction also
+            // calls cancel() after each button, which would trigger didCancel.
+            didCancel: () => { pastePromptOpen = false; if (!handled) skip(); },
             buttons: [
               {
                 label: I18n.t("js.composer.clarion_wrap"),
                 class: "btn-primary",
-                action() { pastePromptOpen = false; wrap(); },
+                action() { pastePromptOpen = false; handled = true; wrap(); },
               },
               {
                 label: I18n.t("js.composer.clarion_wrap_always"),
                 class: "btn-default",
                 action() {
-                  pastePromptOpen = false;
+                  pastePromptOpen = false; handled = true;
                   localStorage.setItem(STORAGE_KEY, "always");
                   wrap();
                 },
@@ -156,7 +160,7 @@ export default {
                 label: I18n.t("js.composer.clarion_skip_never"),
                 class: "btn-default",
                 action() {
-                  pastePromptOpen = false;
+                  pastePromptOpen = false; handled = true;
                   localStorage.setItem(STORAGE_KEY, "never");
                   skip();
                 },
@@ -164,7 +168,7 @@ export default {
               {
                 label: I18n.t("js.composer.clarion_skip"),
                 class: "btn-default",
-                action() { pastePromptOpen = false; skip(); },
+                action() { pastePromptOpen = false; handled = true; skip(); },
               },
             ],
           });

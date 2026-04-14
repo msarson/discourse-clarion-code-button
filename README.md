@@ -69,7 +69,12 @@ A **"Reset Clarion paste preference"** option in the composer's **Options (+)** 
 ### Smart paste
 1. Copy Clarion code from your editor
 2. Paste into the composer (outside any existing code block)
-3. If Clarion code is detected, confirm the prompt to wrap it
+3. If Clarion code is detected, a dialog appears with four options:
+   - **Wrap** — wraps this paste, asks again next time
+   - **Always wrap** — wraps and remembers for all future pastes
+   - **Never wrap** — skips and remembers (native paste from now on)
+   - **Skip** — skips this paste, asks again next time
+   - Pressing **Escape** or clicking outside the dialog acts as Skip
 
 ## Technical Details
 

@@ -80,19 +80,54 @@ if (composerElement.dataset.clarionPasteHandlerAttached) {
 composerElement.dataset.clarionPasteHandlerAttached = "true";
 ```
 
-### 6. Programmatic Text Insertion with Undo Support
-When inserting text programmatically (e.g., in paste handlers), use `document.execCommand("insertText")` to preserve browser undo/redo functionality:
+### 6. Async Text Insertion After a Dialog
+When inserting text asynchronously (after a Discourse dialog closes), `document.execCommand` is unreliable because focus and selection may have shifted. Instead, capture the selection before opening the dialog and use `setRangeText`:
 
 ```javascript
-// Preferred: Creates undo boundary
-document.execCommand("insertText", false, textToInsert);
+// Before opening dialog — capture insertion point
+const selStart = textarea.selectionStart;
+const selEnd = textarea.selectionEnd;
+
+// Inside button action callback (async, after dialog closes)
+function doInsert(textarea, text, selStart, selEnd) {
+  if (!textarea?.isConnected) return;
+  textarea.focus();
+  textarea.setRangeText(text, selStart, selEnd, "end");
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
 ```
 
-**Rationale**: While `execCommand` is deprecated, it remains the only browser-supported way to create undo stack entries for programmatic text insertion. Manual textarea manipulation (setting `.value` and dispatching `InputEvent`) does not create undo boundaries, breaking Ctrl+Z/Cmd+Z behavior.
+Dispatching an `input` event ensures Ember's two-way binding picks up the change.
 
-**Note**: This usage is limited to paste handling where undo functionality is critical. Discourse core and the Ember ecosystem have not yet provided a modern replacement.
+### 7. Using the Discourse Dialog Service
+Access via `api.container.lookup("service:dialog")` and call `dialog.dialog(params)`:
 
-### 7. Code Block Detection
+```javascript
+const dialog = api.container.lookup("service:dialog");
+let handled = false;
+
+dialog.dialog({
+  type: "confirm",           // REQUIRED — without this, only the backdrop renders
+  title: "My title",
+  message: "My message",
+  didCancel: () => { if (!handled) fallback(); },  // Escape / backdrop
+  buttons: [
+    {
+      label: "Do it",
+      class: "btn-primary",
+      action() { handled = true; doSomething(); },
+    },
+    // more buttons...
+  ],
+});
+```
+
+**Gotchas:**
+- `type` is required — `dialog-holder.gjs` gates all content on `{{#if this.dialog.type}}`
+- `handleButtonAction` calls `this.dialog.cancel()` after each button action, which triggers `didCancel`. Use a `handled` flag to prevent double-execution in `didCancel`.
+- Add a null guard (`if (!dialog) { fallback(); return; }`) for forward-compatibility with older Discourse versions.
+
+### 8. Code Block Detection
 Detect if the cursor is inside a fenced code block to avoid nested formatting:
 
 ```javascript
@@ -107,24 +142,30 @@ if (fenceCount % 2 === 1) return;
 ## Common Pitfalls
 
 1. **Not capturing stable API reference**: Leads to "getCurrentComposer is not a function" errors
-2. **Using manual textarea manipulation**: Breaks browser undo/redo; use `document.execCommand("insertText")` instead
-3. **Not preventing duplicate handlers**: Can cause multiple confirmations or unwanted behavior
+2. **Using `execCommand` after async work**: Unreliable once focus has shifted; use `setRangeText` with pre-captured selection instead
+3. **Not preventing duplicate handlers**: Can cause multiple confirmations or unwanted behaviour
 4. **Minifier aliasing**: Variable names can be rewritten by minifiers; use stable references
+5. **Missing `type` in dialog.dialog()**: Backdrop shows but dialog content never renders
+6. **`didCancel` fires after button clicks**: `handleButtonAction` calls `cancel()` after each button, triggering `didCancel`; guard with a `handled` flag
 
 ## Testing Checklist
 
-- [ ] Test paste detection with various code samples
-- [ ] Verify confirmation dialog appears
-- [ ] Confirm code blocks are properly inserted
-- [ ] Test inside existing code blocks (should not trigger)
+- [ ] Test paste detection with various Clarion code samples
+- [ ] Verify Discourse dialog appears (not browser prompt)
+- [ ] Test all 4 dialog buttons (Wrap / Always wrap / Never wrap / Skip)
+- [ ] Verify Escape / backdrop click inserts plain text (Skip behaviour)
+- [ ] Confirm "Always wrap" silently wraps on next paste without dialog
+- [ ] Confirm "Never wrap" lets next paste through natively without dialog
+- [ ] Verify "Reset Clarion paste preference" in Options menu clears saved choice
+- [ ] Test paste inside existing code blocks (should not trigger)
 - [ ] Verify toolbar button works independently
 - [ ] Test with empty/whitespace-only pastes
 - [ ] Verify no duplicate handlers on composer reopen
 
 ## Version History
 
-- **1.0.9**: Replaced manual textarea manipulation with `document.execCommand("insertText")` to preserve undo/redo functionality
-- **1.0.8**: Improved paste detection robustness
-- **1.0.7**: Fixed API reference shadowing issue with stable `pluginApi` capture
-- **1.0.6**: Added manual textarea manipulation with proper event dispatch
-- **1.0.5**: Initial smart paste detection with keyword-based scoring
+- **1.3.1**: Fixed dialog not rendering (`type: "confirm"` required) and double-insert bug (`handled` flag for `didCancel`)
+- **1.3.0**: Replaced browser `prompt()` with Discourse native dialog service; 4-button UX (Wrap / Always wrap / Never wrap / Skip); switched to `setRangeText` for reliable async insertion
+- **1.2.1**: Fixed module import path (`discourse/lib/` → relative `../lib/`)
+- **1.2.0**: Redesigned detection using structural signals instead of keyword scoring; extracted detection to testable lib file; added Vitest test suite (37 tests); added Clarion template language detection (`#For`, `#Loop`, `LOOP`)
+- **1.1.9** and earlier: Keyword scoring detection, browser `prompt()` dialog

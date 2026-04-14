@@ -1,6 +1,6 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
 import I18n from "I18n";
-import { detectClarionCode } from "discourse/lib/clarion-detection";
+import { detectClarionCode } from "../lib/clarion-detection";
 
 const STORAGE_KEY = "clarion-code-button.wrapPreference";
 
